@@ -1,7 +1,5 @@
 # Python Foodgram App (Django)
 
-![Workflow](https://github.com/AdeleDev/foodgram-project-react/actions/workflows/foodgram_workflow.yml/badge.svg)
-
 Fullstack service to publish recipes, subscribe to publications of other users, add favorite recipes to the
 Favorites list. Has a possibility to download a summary ingredients list, needed for cooking of dishes from chosen list.
 
