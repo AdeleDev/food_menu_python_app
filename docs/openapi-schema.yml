@@ -1,0 +1,1208 @@
+openapi: 3.0.2
+info:
+  title: 'Foodgram'
+  version: ''
+paths:
+  /api/users/:
+    get:
+      operationId: Users list
+      description: ''
+      parameters:
+        - name: page
+          required: false
+          in: query
+          description: Page number.
+          schema:
+            type: integer
+        - name: limit
+          required: false
+          in: query
+          description: Amount of items per page.
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 123
+                    description: 'General object amount in db'
+                  next:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://foodgram.example.org/api/users/?page=4
+                    description: 'Link to next page'
+                  previous:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://foodgram.example.org/api/users/?page=2
+                    description: 'Link to prev page'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/User'
+                    description: 'Object list for current page'
+          description: ''
+      tags:
+        - Users
+    post:
+      operationId: User registration
+      description: ''
+      parameters: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomUserCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomUserResponseOnCreate'
+          description: 'User successfully created'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+      tags:
+        - Users
+  /api/tags/:
+    get:
+      operationId: Tag list
+      description: ''
+      parameters: [ ]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+          description: ''
+      tags:
+        - Tags
+  /api/tags/{id}/:
+    get:
+      operationId: Get tag
+      description: ''
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Unique tag identifier."
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+          description: ''
+        '404':
+          $ref: '#/components/responses/NotFound'
+      tags:
+        - Tags
+  /api/recipes/:
+    get:
+      operationId: Recipe list
+      description: Page accessible for all users. Has filter by favorites, author, shopping list, tags.
+      parameters:
+        - name: page
+          required: false
+          in: query
+          description: Page number.
+          schema:
+            type: integer
+        - name: limit
+          required: false
+          in: query
+          description: Amount of objects per page.
+          schema:
+            type: integer
+        - name: is_favorited
+          required: false
+          in: query
+          description: Show only favorite recipes.
+          schema:
+            type: integer
+            enum: [ 0, 1 ]
+        - name: is_in_shopping_cart
+          required: false
+          in: query
+          description: Show recipes only from shopping list.
+          schema:
+            type: integer
+            enum: [ 0, 1 ]
+        - name: author
+          required: false
+          in: query
+          description: Show recipes only for user by id.
+          schema:
+            type: integer
+        - name: tags
+          required: false
+          in: query
+          description: Show recipes only by set tag. (по slug)
+          example: 'lunch&tags=breakfast'
+
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 123
+                    description: 'General amount of objects in db'
+                  next:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://foodgram.example.org/api/recipes/?page=4
+                    description: 'Link to next page'
+                  previous:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://foodgram.example.org/api/recipes/?page=2
+                    description: 'Link to prev page'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/RecipeList'
+                    description: 'List of objects for current page'
+          description: ''
+      tags:
+        - Recipes
+    post:
+      security:
+        - Token: [ ]
+      operationId: Create recipe
+      description: 'Only for authorized users'
+      parameters: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeCreateUpdate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeList'
+          description: 'Recipe successfully created'
+        '400':
+          description: 'Validation error in DRF format'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+        '401':
+          $ref: '#/components/schemas/AuthenticationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      tags:
+        - Recipes
+  /api/recipes/download_shopping_cart/:
+    get:
+      security:
+        - Token: [ ]
+      operationId: Download shopping list
+      description: 'Download shopping list in TXT/PDF/CSV. Only for authorized users'
+      parameters: [ ]
+      responses:
+        '200':
+          description: ''
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+                format: binary
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Shopping list
+  /api/recipes/{id}/:
+    get:
+      operationId: Get recipe
+      description: ''
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique user identifier"
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeList'
+          description: ''
+      tags:
+        - Recipe
+    patch:
+      operationId: Update recipe
+      security:
+        - Token: [ ]
+      description: 'Access only for creator of recipe'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique recipe identifier."
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecipeCreateUpdate'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeList'
+          description: "Recipe successfully created"
+        '400':
+          $ref: '#/components/responses/NestedValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      tags:
+        - Recipes
+    delete:
+      operationId: Delete recipe
+
+      description: 'Access only for creator of recipe'
+      security:
+        - Token: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique recipe identifier."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: "Recipe successfully created"
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '403':
+          $ref: '#/components/responses/PermissionDenied'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      tags:
+        - Recipes
+  /api/recipes/{id}/favorite/:
+    post:
+      operationId: Add recipe to favorites
+      description: 'Access only for authorized users'
+      security:
+        - Token: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique recipe identifier."
+          schema:
+            type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeMinified'
+          description: "Recipe successfully added to favorites"
+        '400':
+          description: 'Error to add to favorites (ex, recipe already in list)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfMadeError'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+
+      tags:
+        - Favorites
+    delete:
+      operationId: Delete recipes to favorites
+      description: 'Access only for authorized users'
+      security:
+        - Token: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique recipe identifier."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: "Recipe successfully deleted from favorites"
+        '400':
+          description: 'Error to delete from favorites (ex, recipe not in list)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfMadeError'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Favorites
+  /api/recipes/{id}/shopping_cart/:
+    post:
+      operationId: Add recipe to shopping list
+      description: 'Access only for authorized users'
+      security:
+        - Token: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique recipe identifier."
+          schema:
+            type: string
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecipeMinified'
+          description: 'Recipe successfully added to shopping list'
+        '400':
+          description: 'Error to add to shopping list (ex, recipe already in shopping list)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfMadeError'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Shopping list
+    delete:
+      operationId: Delete recipe from shopping list
+      description: 'Access only for authorized users'
+      security:
+        - Token: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique recipe identifier."
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'Recipe successfully deleted from shopping list'
+        '400':
+          description: 'Error to delete from shopping list (ex, recipe not in shopping list)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfMadeError'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Shopping list
+  /api/users/{id}/:
+    get:
+      operationId: User profile
+      description: 'Access for all users'
+      security:
+        - Token: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique user id"
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Users
+  /api/users/me/:
+    get:
+      operationId: Current user
+      description: ''
+      parameters: [ ]
+      security:
+        - Token: [ ]
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Users
+  /api/users/subscriptions/:
+    get:
+      operationId: My subscriptions
+      description: 'Return users on whom current user is subscribed. Recipes added to output.'
+      parameters:
+        - name: page
+          required: false
+          in: query
+          description: Page number.
+          schema:
+            type: integer
+        - name: limit
+          required: false
+          in: query
+          description: Amount of objects per page.
+          schema:
+            type: integer
+        - name: recipes_limit
+          required: false
+          in: query
+          description: КAmount of objects in recipes field.
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    example: 123
+                    description: 'General amount of objects in db'
+                  next:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://foodgram.example.org/api/users/subscriptions/?page=4
+                    description: 'Link to next page'
+                  previous:
+                    type: string
+                    nullable: true
+                    format: uri
+                    example: http://foodgram.example.org/api/users/subscriptions/?page=2
+                    description: 'Link to prev page'
+                  results:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserWithRecipes'
+                    description: 'Amount of objects on current page'
+          description: ''
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Subscriptions
+  /api/users/{id}/subscribe/:
+    post:
+      operationId: Subscribe on user
+      description: 'Access only for authorized users'
+      security:
+        - Token: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique user identifier"
+          schema:
+            type: string
+        - name: recipes_limit
+          required: false
+          in: query
+          description: Amount of objects in recipes page.
+          schema:
+            type: integer
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithRecipes'
+          description: 'Subscription successfully created'
+        '400':
+          description: 'Subscription error (ex, already subscribed, subscription on myself)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfMadeError'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      tags:
+        - Subscriptions
+    delete:
+      operationId: Unsubscribe from user
+      description: 'Access only for authorized users'
+      security:
+        - Token: [ ]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: "Unique user identifier"
+          schema:
+            type: string
+      responses:
+        '204':
+          description: 'Successful unsubscription'
+        '400':
+          description: 'Unsubscription error (ex, not subscribed)'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SelfMadeError'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+      tags:
+        - Subscriptions
+  /api/ingredients/:
+    get:
+      operationId: Ingredient list
+      description: 'Ingredient list with search by name possibility.'
+      parameters:
+        - name: name
+          required: false
+          in: query
+          description: Search for a partial match at the beginning of the ingredient name.
+          schema:
+            type: string
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ingredient'
+          description: ''
+      tags:
+        - Ingredients
+  /api/ingredients/{id}/:
+    get:
+      operationId: Get ingredient
+      description: 'Unique ingredient id'
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: ''
+          schema:
+            type: integer
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ingredient'
+          description: ''
+      tags:
+        - Ingredients
+  /api/users/set_password/:
+    post:
+      operationId: Change pass
+      description: 'Change current user pass'
+      parameters: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SetPassword'
+      responses:
+        '204':
+          description: 'Password successfully changed'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Users
+  /api/auth/token/login/:
+    post:
+      operationId: Get auth token
+      description: Used for authorization by email and password, in order to further use the token for requests.
+      parameters: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenCreate'
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenGetResponse'
+          description: ''
+      tags:
+        - Users
+  /api/auth/token/logout/:
+    post:
+      operationId: Delete token
+      description: Delete current user token
+      parameters: [ ]
+      requestBody:
+        content:
+          application/json:
+            schema: { }
+
+      responses:
+        '204':
+          content:
+            application/json:
+              schema: { }
+          description: ''
+        '401':
+          $ref: '#/components/responses/AuthenticationError'
+      tags:
+        - Users
+components:
+  schemas:
+    User:
+      description: 'User (Author in recipe)'
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: "Email"
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: "Unique username"
+          pattern: ^[\w.@+-]+\z
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+          description: "Name"
+          example: "John"
+        last_name:
+          type: string
+          maxLength: 150
+          description: "Surname"
+          example: "Doe"
+        is_subscribed:
+          type: boolean
+          readOnly: true
+          description: "Is current user subscribed on pointed"
+          example: false
+      required:
+        - username
+    UserWithRecipes:
+      description: 'Extended user object with recipes'
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: "Email"
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: "Unique username"
+          pattern: ^[\w.@+-]+\z
+          maxLength: 150
+        first_name:
+          type: string
+          maxLength: 150
+          description: "Name"
+          example: "John"
+        last_name:
+          type: string
+          maxLength: 150
+          description: "Surname"
+          example: "Doe"
+        is_subscribed:
+          type: boolean
+          readOnly: true
+          description: "Is current user subscribed on pointed"
+        recipes:
+          type: array
+          items:
+            $ref: '#/components/schemas/RecipeMinified'
+        recipes_count:
+          type: integer
+          description: "Amount of user's recipe"
+
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+          description: 'Title'
+          example: 'Breakfast'
+        color:
+          type: string
+          nullable: true
+          maxLength: 7
+          description: 'Color in HEX'
+          example: '#E26C2D'
+        slug:
+          type: string
+          nullable: true
+          maxLength: 200
+          pattern: ^[-a-zA-Z0-9_]+$
+          description: 'Unique slug'
+          example: 'breakfast'
+    RecipeList:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: 'Unique id'
+        tags:
+          description: 'Tag list'
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        author:
+          $ref: '#/components/schemas/User'
+        ingredients:
+          description: 'Ingredient list'
+          type: array
+          items:
+            $ref: '#/components/schemas/IngredientInRecipe'
+        is_favorited:
+          type: boolean
+          description: 'Is in favorites'
+        is_in_shopping_cart:
+          type: boolean
+          description: 'Is in basket'
+        name:
+          type: string
+          maxLength: 200
+          description: 'Title'
+        image:
+          description: 'Link on image on site'
+          example: 'http://foodgram.example.org/media/recipes/images/image.jpeg'
+          type: string
+          format: url
+        text:
+          description: 'Description'
+          type: string
+        cooking_time:
+          description: 'Cooking time (in minutes)'
+          type: integer
+          minimum: 1
+      required:
+        - tags
+        - author
+        - is_favorited
+        - is_in_shopping_cart
+        - name
+        - image
+        - text
+        - cooking_time
+    RecipeMinified:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+          description: 'Unique id'
+        name:
+          type: string
+          maxLength: 200
+          description: 'Title'
+        image:
+          description: 'Link on image on site'
+          example: 'http://foodgram.example.org/media/recipes/images/image.jpeg'
+          type: string
+          format: url
+        cooking_time:
+          description: 'Cooking time (in minutes)'
+          type: integer
+          minimum: 1
+    Ingredient:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+          example: 'Cabbage'
+        measurement_unit:
+          type: string
+          maxLength: 200
+          example: 'kg'
+      required:
+        - name
+        - measurement_unit
+    IngredientInRecipe:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        name:
+          type: string
+          maxLength: 200
+          description: 'Title'
+          example: 'Boiled potatoes'
+        measurement_unit:
+          type: string
+          maxLength: 200
+          description: 'Units'
+          example: 'g'
+        amount:
+          type: integer
+          description: 'Amount'
+          minimum: 1
+
+      required:
+        - name
+        - measurement_unit
+    CustomUserCreate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: "Email"
+          example: "johndoe@gmail.com"
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: "Unique username"
+          pattern: ^[\w.@+-]+\z
+          maxLength: 150
+          example: "john.doe"
+        first_name:
+          type: string
+          maxLength: 150
+          description: "Name"
+          example: "John"
+        last_name:
+          type: string
+          maxLength: 150
+          description: "Surname"
+          example: "Doe"
+        password:
+          type: string
+          maxLength: 150
+          description: "Password"
+          example: "Qwerty123"
+      required:
+        - username
+        - password
+        - first_name
+        - last_name
+        - email
+    CustomUserResponseOnCreate:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          maxLength: 254
+          description: "Email"
+          example: "johndoe@gmail.com"
+        id:
+          type: integer
+          readOnly: true
+        username:
+          type: string
+          description: "Unique username"
+          pattern: ^[\w.@+-]+\z
+          maxLength: 150
+          example: "john.doe"
+        first_name:
+          type: string
+          maxLength: 150
+          description: "Name"
+          example: "John"
+        last_name:
+          type: string
+          maxLength: 150
+          description: "Surname"
+          example: "Doe"
+      required:
+        - username
+        - first_name
+        - last_name
+        - email
+    Activation:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+      required:
+        - uid
+        - token
+    SendEmailReset:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+      required:
+        - email
+    PasswordResetConfirm:
+      type: object
+      properties:
+        uid:
+          type: string
+        token:
+          type: string
+        new_password:
+          type: string
+      required:
+        - uid
+        - token
+        - new_password
+    UsernameResetConfirm:
+      type: object
+      properties:
+        new_email:
+          type: string
+          format: email
+          maxLength: 254
+    SetPassword:
+      type: object
+      properties:
+        new_password:
+          type: string
+        current_password:
+          type: string
+      required:
+        - new_password
+        - current_password
+    SetUsername:
+      type: object
+      properties:
+        current_password:
+          type: string
+        new_email:
+          type: string
+          format: email
+          maxLength: 254
+      required:
+        - current_password
+    TokenCreate:
+      type: object
+      properties:
+        password:
+          type: string
+        email:
+          type: string
+    TokenGetResponse:
+      type: object
+      properties:
+        auth_token:
+          type: string
+    RecipeCreateUpdate:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        ingredients:
+          description: Ingredient list
+          type: array
+          items:
+            example:
+              id: 1123
+              amount: 10
+            type: object
+            properties:
+              id:
+                description: 'Unique id'
+                type: integer
+              amount:
+                description: 'Amount in recipe'
+                type: integer
+            required:
+              - id
+              - amount
+        tags:
+          description: 'List of id tags'
+          type: array
+          example: [ 1, 2 ]
+          items:
+            type: integer
+        image:
+          description: 'Image in Base64'
+          example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAgMAAABieywaAAAACVBMVEUAAAD///9fX1/S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAACklEQVQImWNoAAAAggCByxOyYQAAAABJRU5ErkJggg=='
+          type: string
+          format: binary
+        name:
+          description: 'Title'
+          type: string
+          maxLength: 200
+        text:
+          description: 'Description'
+          type: string
+        cooking_time:
+          description: 'Cooking time (in minutes)'
+          type: integer
+          minimum: 1
+      required:
+        - ingredients
+        - tags
+        - image
+        - name
+        - text
+        - cooking_time
+
+    ValidationError:
+      description: Standard errors in DRG format
+      type: object
+      properties:
+        field_name:
+          description: 'Title of field with error. Can be several'
+          example: [ 'Mandatory field.' ]
+          type: array
+          items:
+            type: string
+    NestedValidationError:
+      description: Standard errors in DRG format
+      type: object
+      properties:
+        ingredients:
+          description: 'Error in ingredients. In the example above, there were no errors in the first and third ingredient (amount >= 1), but there were in the second.'
+          example: [ { },{ "amount": [ "Make sure this value is greater than or equal to 1." ] }, { } ]
+          type: array
+          items:
+            type: object
+            properties:
+              amount:
+                type: array
+                items:
+                  type: string
+
+    SelfMadeError:
+      description: Error
+      type: object
+      properties:
+        errors:
+          description: 'Error description'
+          type: string
+
+    AuthenticationError:
+      description: User not authorized
+      type: object
+      properties:
+        detail:
+          description: 'Error description'
+          example: "Credentials were not provided."
+          type: string
+
+    PermissionDenied:
+      description: Not enough rights
+      type: object
+      properties:
+        detail:
+          description: 'Error description'
+          example: "You do not have sufficient rights to perform this action."
+          type: string
+    NotFound:
+      description: Object not found
+      type: object
+      properties:
+        detail:
+          description: 'Error description'
+          example: "Page not found."
+          type: string
+
+  responses:
+    ValidationError:
+      description: 'Validation errors in DRF format'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ValidationError'
+    NestedValidationError:
+      description: 'Validation errors in the standard DRF format, including those with internal elements.'
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: '#/components/schemas/NestedValidationError'
+              - $ref: '#/components/schemas/ValidationError'
+
+    AuthenticationError:
+      description: User not authorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/AuthenticationError'
+
+    PermissionDenied:
+      description: Not enough rights
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/PermissionDenied'
+
+    NotFound:
+      description: Object not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/NotFound'
+
+
+  securitySchemes:
+    Token:
+      description: 'Auth by token. <br>
+      All requests on behalf of the user must be made with the header "Authorization: Token TOKENVALUE"'
+      type: http
+      scheme: token
